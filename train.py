@@ -1,5 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
 import torch.nn as nn
 import pandas as pd
 import numpy as np
@@ -56,69 +57,58 @@ n_samples, n_features = X.shape
 model = LogisticRegression(n_features).to(device)
 
 # Tasa de aprendizaje
-learning_rate = 0.01
+learning_rate = 0.2
 
 # Funciones de pérdida y optimizador
-criterion = nn.BCELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+criterion = nn.BCEWithLogitsLoss()
+optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
 
 # Epochs (iteraciones)
 num_epochs = 5000
 
+# Almacenar la pérdida. Se usará en la representación gráfica.
+losses = []
+
 # Entrenamiento del modelo
-for epoch in range(num_epochs):
-    # Forward pass. Se calculan las predicciones "iniciales"
-    y_predicted = model(X_train)
+if __name__ == '__main__':
+    for epoch in range(num_epochs):
+        # Forward pass. Se calculan las predicciones "iniciales"
+        y_predicted = model(X_train)
 
-    # Calculamos la pérdida.
-    loss = criterion(y_predicted, y_train)
+        # Calculamos la pérdida y la almacenamos para su representación gráfica.
+        loss = criterion(y_predicted, y_train)
+        losses.append(loss.item())
 
-    # Backward pass. Se calcula el gradiente de la función de pérdida con respecto a los parámetros del modelo. Una especie de retropropagación.
-    loss.backward()
+        # Backward pass. Se calcula el gradiente de la función de pérdida con respecto a los parámetros del modelo. Una especie de retropropagación.
+        loss.backward()
+        
+        # Update. Actualizamos los parámetros del modelo con la nueva información.
+        optimizer.step()
+        
+        # Limpiamos los gradientes.
+        optimizer.zero_grad()
+        
+        # Imprimimos la pérdida cada 10 iteraciones.
+        if (epoch+1) % 10 == 0:
+            print(f'epoch: {epoch+1}, loss = {loss.item():.4f}')
     
-    # Update. Actualizamos los parámetros del modelo con la nueva información.
-    optimizer.step()
-    
-    # Limpiamos los gradientes.
-    optimizer.zero_grad()
-    
-    # Imprimimos la pérdida cada 10 iteraciones.
-    if (epoch+1) % 10 == 0:
-        print(f'epoch: {epoch+1}, loss = {loss.item():.4f}')
+    # Representamos gráficamente la pérdida.
+    plt.plot(losses)
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.show()
 
-# Evaluamos la precisión del modelo. 
-with torch.no_grad():
-    y_predicted = model(X_test)  # Predicciones
-    y_predicted_cls = y_predicted.round() # Redondeamos las predicciones. Tenemos que redondear porque estamos trabajando con una función sigmoide que predice una variable logística
-    acc = y_predicted_cls.eq(y_test).sum() / float(y_test.shape[0]) # Calculamos la precisión. Dividimos el número de predicciones correctas entre el número total de predicciones.
-    print(f'accuracy = {acc:.4f}')
+    # Evaluamos la precisión del modelo. 
+    with torch.no_grad():
+        y_predicted = model(X_test)  # Predicciones
+        y_predicted_cls = y_predicted.round() # Redondeamos las predicciones. Tenemos que redondear porque estamos trabajando con una función sigmoide que predice una variable logística
+        acc = y_predicted_cls.eq(y_test).sum() / float(y_test.shape[0]) # Calculamos la precisión. Dividimos el número de predicciones correctas entre el número total de predicciones.
+        print(f'accuracy = {acc:.4f}')
 
-# Podemos guardar el modelo para usarlo más tarde.
-#torch.save(model.state_dict(), 'model.ckpt')       
-
-print('\n Modelo entrenado. Ahora puedes hacer predicciones.')
-a = input('\n Introduzca la edad: ')
-b = input('\n Introduzca si tiene anemia (1/0): ')
-c = input('\n Introduzca si tiene diabetes (1/0): ')
-d = input('\n Introduzca si tiene hipertensión (1/0): ')
-e = input('\n Introduzca el sexo (1/0 Hombre/Mujer): ')
-f = input('\n Introduzca si fuma (1/0): ')
-
-
-
-# Normalizamos los datos
-new_data = np.array([[60, 0, 100, 0, 60, 0, 200000, 1.1, 140, 1, 0, 100]])
-new_data = sc.transform(new_data)
-
-# Convertimos los datos a tensores
-new_data = torch.from_numpy(new_data.astype(np.float32))
-
-# Movemos los datos a la GPU
-new_data = new_data.to(device)
-
-# Hacemos la predicción
-with torch.no_grad():
-    new_data = model(new_data)
-    #new_data = new_data.round()
-    print(new_data) # Si la predicción es 1, el paciente morirá. Si es 0, el paciente no morirá.
-
+    # Podemos guardar el modelo para usarlo más tarde.
+    save = input('Quieres guardar el modelo ? (S/N): ')
+    if save.lower() == 's':
+        torch.save(model.state_dict(), 'model.pth')
+        print('Modelo guardado.')
+    else:
+        exit()
