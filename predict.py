@@ -55,13 +55,19 @@ serum_v = serum_mean if serum_i == '' else float(serum_i)
 sodio_v = sodio_mean if sodio_i == '' else float(sodio_i)
 sexo_v = 0 if sexo_i == '' else int(sexo_i)
 smoking_v = 0 if smoking_i == '' else int(smoking_i)
-tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i)
+tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i) 
 
-X_new = torch.tensor([edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v], dtype=torch.float32)
+#X_new = torch.tensor([edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v], dtype=torch.float32)
+
+
+X_new = torch.tensor([95,1,582,0,30,0,461000,2,132,1,0,50], dtype=torch.float32)
 
 # Realiza la predicción
 with torch.no_grad():
     y_pred = model(X_new)
-    y_pred = y_pred.round()
+    #y_pred = y_pred.round()
     print(f'Predicción: {y_pred.item()}')
+
+
+
 
