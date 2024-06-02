@@ -8,9 +8,11 @@ import torch
 
 # Cargamos los datos
 data = pd.read_csv('heart_failure.csv')
+
+# Copiamos los datos originales para la predicción final
 original_data = data.copy()
 
-# Dividimos los datos en variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable DEATH_EVENT.
+# Dividimos los datos en variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
 X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
 
 #Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para reproducibilidad.
@@ -22,12 +24,12 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-# Normalizar los datos. 
+# Normalizar los datos. Todos los datos deben tener la misma escala.
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
 
-# Convertir los datos a tensores.
+# Convertir los datos a tensores con los que podamos trabajar
 X_train = torch.from_numpy(X_train.astype(np.float32))
 X_test = torch.from_numpy(X_test.astype(np.float32))
 y_train = torch.from_numpy(y_train.astype(np.float32))
@@ -39,7 +41,7 @@ X_test = X_test.to(device)
 y_train = y_train.to(device)
 y_test = y_test.to(device)
 
-# Redimensionar y_train y y_test.
+# Redimensionar y_train y y_test. Solo predecimos una columna.
 y_train = y_train.view(y_train.shape[0], 1)
 y_test = y_test.view(y_test.shape[0], 1)
 
@@ -48,72 +50,85 @@ y_test = y_test.view(y_test.shape[0], 1)
 class LogisticRegression(nn.Module):
     def __init__(self, n_input_features):
         super(LogisticRegression, self).__init__()
-        self.linear = nn.Linear(n_input_features, 1) # Regresión lineal. y = wx + b. 12 variables de entrada y 1 de salida.
+        self.linear = nn.Linear(n_input_features, 1) # Transformación lineal de los datos de entrada. 1 columna de salida.
 
+    # Forward pass. Se calcula la predicción con una función sigmoide para obtener valores entre 0 y 1.
     def forward(self, x):
-        y_predicted = torch.sigmoid(self.linear(x)) # Función sigmoide para predecir una variable logística.
+        y_predicted = torch.sigmoid(self.linear(x))
         return y_predicted
 
+# Número de características de entrada
 n_samples, n_features = X.shape
+
+# Instanciar el modelo
 model = LogisticRegression(n_features).to(device)
 
 # Tasa de aprendizaje
-learning_rate = 0.1
+learning_rate = 0.01
 
 # Funciones de pérdida y optimizador
-criterion = nn.BCEWithLogitsLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+criterion = nn.MSELoss()
+optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
 
 # Epochs (iteraciones)
-num_epochs = 15000
+num_epochs = 1000
 
 # Almacenar la pérdida. Se usará en la representación gráfica.
 losses = []
 
-# Entrenamiento del modelo
+# Entrenamiento
 if __name__ == '__main__':
     for epoch in range(num_epochs):
-        # Forward pass. Se calculan las predicciones "iniciales"
+        # Forward pass (predicción)
         y_predicted = model(X_train)
 
-        # Calculamos la pérdida y la almacenamos para su representación gráfica.
+        # Calculamos la pérdida y la almacenamos para su representación gráfica
         loss = criterion(y_predicted, y_train)
         losses.append(loss.item())
 
-        # Backward pass. Se calcula el gradiente de la función de pérdida con respecto a los parámetros del modelo. Una especie de retropropagación.
+        # Backward pass. Se calcula el gradiente de la función de pérdida con respecto a los parámetros del modelo.
         loss.backward()
         
-        # Update. Actualizamos los parámetros del modelo con la nueva información.
+        # Update. Actualizamos los parámetros del modelo con la nueva información
         optimizer.step()
         
-        # Limpiamos los gradientes.
+        # Limpiamos los gradientes
         optimizer.zero_grad()
         
-        # Imprimimos la pérdida cada 10 iteraciones.
+        # Imprimimos la pérdida cada 10 iteraciones
         if (epoch+1) % 10 == 0:
-            print(f'epoch: {epoch+1}, loss = {loss.item():.4f}')
+            print(f'epoch: {epoch+1}, pérdida = {loss.item():.4f}')
 
     
-    # Representamos gráficamente la pérdida.
-    plt.plot(losses)
+    # Representar pérdida
+    """ plt.plot(losses)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.show()
+    plt.show() """
 
-    # Evaluamos la precisión del modelo. 
+    # Evaluamos la precisión del modelo con el conjunto de test
     with torch.no_grad():
         y_predicted = model(X_test)
+
+        # Estadísticas de la validación
         acc = torch.sum(y_predicted.round() == y_test)/len(y_test)
-        print(f'accuracy: {acc.item():.4f}')
+        misses = torch.sum(y_predicted.round() != y_test)
+        doubtful = torch.sum((y_predicted >= 0.4) & (y_predicted <= 0.6))
+
+        print('\n=== Estadísticas de la validación ===')
+        print(f'nº registros: {len(y_test)}')
+        print(f'precisión: {acc.item()*100:.2f}%')
+        print(f'errores: {misses.item()}')
+        print(f'dudosos: {doubtful.item()}')
+
     
-    # Guardamos el modelo.
+    # Guardamos el modelo en un fichero
     torch.save(model.state_dict(), 'model.pth')
 
+    # Predecimos el conjunto original de datos
     with torch.no_grad():
         original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round()
+        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(['DEATH_EVENT', 'PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy()
     
-    fallos = original_data[original_data['DEATH_EVENT'] != original_data['PREDICT']]
-    print(len(fallos))
-
     # Guardamos el dataframe con la predicción
     original_data.to_csv('heart_failure_predict.csv', index=False)

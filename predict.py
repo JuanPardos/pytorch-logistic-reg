@@ -1,5 +1,7 @@
+from sklearn.preprocessing import StandardScaler
 from train import LogisticRegression
 import pandas as pd
+import numpy as np
 import torch
 
 # Cargamos datos para calcular las medias
@@ -14,14 +16,17 @@ serum_mean = data['serum_creatinine'].mean()
 sodio_mean = data['serum_sodium'].mean()
 tiempo_mean = data['time'].mean()
 
-# Asegúrate de que la arquitectura del modelo sea la misma que la del modelo guardado
+# 12 variables independientes
 model = LogisticRegression(12)
 
 # Carga los pesos del modelo
 model.load_state_dict(torch.load('model.pth'))
 
-# Asegúrate de que el modelo esté en modo de evaluación
+# Se pone el modelo en modo de evaluación
 model.eval()
+
+# Dispositivo donde se ejecutará el modelo. Para predecir con CPU nos vale.
+device = 'cpu'
 
 print(
     """A continuación puede insertar los valores de las variables independientes.
@@ -55,18 +60,20 @@ serum_v = serum_mean if serum_i == '' else float(serum_i)
 sodio_v = sodio_mean if sodio_i == '' else float(sodio_i)
 sexo_v = 0 if sexo_i == '' else int(sexo_i)
 smoking_v = 0 if smoking_i == '' else int(smoking_i)
-tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i) 
+tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i)
 
-#X_new = torch.tensor([edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v], dtype=torch.float32)
+X_new = [edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v]
+X_new = np.array(X_new)
 
-
-X_new = torch.tensor([95,1,582,0,30,0,461000,2,132,1,0,50], dtype=torch.float32)
+#Normaliza los datos
+sc = StandardScaler()
+X_new = sc.fit_transform([X_new])
+X_new = torch.from_numpy(X_new.astype(np.float32)).to(device)
 
 # Realiza la predicción
 with torch.no_grad():
     y_pred = model(X_new)
-    #y_pred = y_pred.round()
-    print(f'Predicción: {y_pred.item()}')
+    print('Probabilidad de fallecimiento: {:.2%}'.format(y_pred.item()))
 
 
 
