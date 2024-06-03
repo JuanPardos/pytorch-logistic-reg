@@ -5,6 +5,9 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 import torch
+import time
+
+#
 
 # Cargamos los datos
 data = pd.read_csv('heart_failure.csv')
@@ -12,11 +15,11 @@ data = pd.read_csv('heart_failure.csv')
 # Copiamos los datos originales para la predicción final
 original_data = data.copy()
 
-# Dividimos los datos en variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
+# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
 X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
 
-#Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para reproducibilidad.
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=420)
+#Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=33)
 
 # Definimos el dispositivo donde se ejecutará el modelo. GPU si está disponible, de lo contrario, CPU.
 if torch.cuda.is_available():
@@ -52,7 +55,7 @@ class LogisticRegression(nn.Module):
         super(LogisticRegression, self).__init__()
         self.linear = nn.Linear(n_input_features, 1) # Transformación lineal de los datos de entrada. 1 columna de salida.
 
-    # Forward pass. Se calcula la predicción con una función sigmoide para obtener valores entre 0 y 1.
+    # Forward pass. Se calcula la predicción usando la función sigmoide para obtener valores entre 0 y 1.
     def forward(self, x):
         y_predicted = torch.sigmoid(self.linear(x))
         return y_predicted
@@ -64,20 +67,21 @@ n_samples, n_features = X.shape
 model = LogisticRegression(n_features).to(device)
 
 # Tasa de aprendizaje
-learning_rate = 0.01
+learning_rate = 0.5  #0.5
 
 # Funciones de pérdida y optimizador
-criterion = nn.MSELoss()
-optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+criterion = nn.L1Loss()     #L1Loss
+optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate)   #Adagrad o RMSprop
 
 # Epochs (iteraciones)
-num_epochs = 1000
+num_epochs = 15000  #15000
 
 # Almacenar la pérdida. Se usará en la representación gráfica.
 losses = []
 
 # Entrenamiento
 if __name__ == '__main__':
+    t0 = time.time()
     for epoch in range(num_epochs):
         # Forward pass (predicción)
         y_predicted = model(X_train)
@@ -99,6 +103,8 @@ if __name__ == '__main__':
         if (epoch+1) % 10 == 0:
             print(f'epoch: {epoch+1}, pérdida = {loss.item():.4f}')
 
+    print(f'\nTiempo de entrenamiento: {time.time()-t0:.2f} segundos')
+    print('Epoch/s: {:.2f}'.format(num_epochs/(time.time()-t0)))
     
     # Representar pérdida
     """ plt.plot(losses)
@@ -113,22 +119,35 @@ if __name__ == '__main__':
         # Estadísticas de la validación
         acc = torch.sum(y_predicted.round() == y_test)/len(y_test)
         misses = torch.sum(y_predicted.round() != y_test)
-        doubtful = torch.sum((y_predicted >= 0.4) & (y_predicted <= 0.6))
+        doubtful = torch.sum((y_predicted >= 0.4) & (y_predicted <= 0.6)) # Consideramos dudosos aquellos valores entre 0.4 y 0.6
 
         print('\n=== Estadísticas de la validación ===')
         print(f'nº registros: {len(y_test)}')
         print(f'precisión: {acc.item()*100:.2f}%')
         print(f'errores: {misses.item()}')
-        print(f'dudosos: {doubtful.item()}')
+        print(f'dudosos: {doubtful.item()} ({doubtful.item()/len(y_test)*100:.2f}%)')  
 
-    
-    # Guardamos el modelo en un fichero
-    torch.save(model.state_dict(), 'model.pth')
+        # Matriz de confusión
+        TP = torch.sum((y_predicted.round() == 1) & (y_test == 1))
+        TN = torch.sum((y_predicted.round() == 0) & (y_test == 0))
+        FP = torch.sum((y_predicted.round() == 1) & (y_test == 0))
+        FN = torch.sum((y_predicted.round() == 0) & (y_test == 1))
+
+        print('\n=== Matriz de confusión ===')
+        print(f'{"":<10} {"Predicción"}')
+        print(f'{"Real":<10} {"0":<10} {"1":<10}')
+        print(f'{"0":<10} {TN.item():<10} {FP.item():<10}')
+        print(f'{"1":<10} {FN.item():<10} {TP.item():<10}')
+
 
     # Predecimos el conjunto original de datos
     with torch.no_grad():
         original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round()
         original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(['DEATH_EVENT', 'PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy()
     
-    # Guardamos el dataframe con la predicción
-    original_data.to_csv('heart_failure_predict.csv', index=False)
+    # Guardamos modelo y dataset con predicciones
+    user_input = input('\n¿Desea guardar el modelo y dataset con las predicciones? (S/N): ')
+    if user_input.lower() == 's':
+        torch.save(model.state_dict(), 'model.pth')
+        original_data.to_csv('heart_failure_predict.csv', index=False)
+        print('Guardado correctamente.')

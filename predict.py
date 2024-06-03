@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import torch
 
+#FIXME
+
 # Cargamos datos para calcular las medias
 data = pd.read_csv('heart_failure.csv')
 
@@ -19,8 +21,15 @@ tiempo_mean = data['time'].mean()
 # 12 variables independientes
 model = LogisticRegression(12)
 
-# Carga los pesos del modelo
-model.load_state_dict(torch.load('model.pth'))
+# Cargamos el modelo entrenado. Primero intentamos cargar el modelo preentrenado, si no existe, intentamos cargar el modelo menos exacto.
+try:
+    model.load_state_dict(torch.load('pretrained_model.pth'))
+except FileNotFoundError:
+    try:
+        model.load_state_dict(torch.load('model.pth'))
+    except FileNotFoundError:
+        print('No se ha encontrado el modelo. Por favor, ejecute train.py para entrenar el modelo antes de realizar una predicción.')
+        exit()
 
 # Se pone el modelo en modo de evaluación
 model.eval()
@@ -62,13 +71,15 @@ sexo_v = 0 if sexo_i == '' else int(sexo_i)
 smoking_v = 0 if smoking_i == '' else int(smoking_i)
 tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i)
 
-X_new = [edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v]
-X_new = np.array(X_new)
+# Prepara los datos de entrada
+X_new = np.array([edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v])
 
-#Normaliza los datos
+# Normaliza los datos
 sc = StandardScaler()
-X_new = sc.fit_transform([X_new])
-X_new = torch.from_numpy(X_new.astype(np.float32)).to(device)
+X_new = sc.fit_transform(X_new.reshape(1, -1))
+
+# Convierte los datos de entrada a un tensor de PyTorch
+X_new = torch.from_numpy(X_new.astype(np.float32))
 
 # Realiza la predicción
 with torch.no_grad():

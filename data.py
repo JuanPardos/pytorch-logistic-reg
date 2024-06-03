@@ -3,11 +3,17 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
+#TODO: Mostrar gráficos de las variables
+
 # Referencia
 print('Heart Failure Clinical Records (2020) - https://archive.ics.uci.edu/dataset/519/heart+failure+clinical+records')
 
 # Cargamos el dataset
 data = pd.read_csv('heart_failure.csv')
+
+# Grafico con la distribución de las variables
+data.hist(figsize = (10,10))
+plt.show()
 
 # Resumen de los datos. No hay nulos. Todas las variables son numéricas. Y usaremos todas las columnas para predecir DEATH_EVENT.
 print(data.info())
@@ -24,8 +30,10 @@ iqr = q75 - q25
 lower_bound = q25 - 1.5 * iqr
 upper_bound = q75 + 1.5 * iqr
 
-# Filtramos los datos atípicos. No hay.
+# Filtramos los datos atípicos.
 outliers = data[(data < lower_bound) | (data > upper_bound)].count()
+print(len(outliers))
+# Hay 13 datos atípicos. Los eliminamos.
 
 # Descripción de los datos
 print(data.describe())
@@ -37,4 +45,7 @@ print(data.corr())
 f, ax = plt.subplots(figsize = (12,12))
 sns.heatmap(data.corr(), annot = True, linewidths=0.5, linecolor = "black", fmt = ".4f", ax = ax)
 plt.show()
+
+# Guardamos el dataset con los cambios realizados
+data.to_csv('heart_failure.csv', index=False)
 
