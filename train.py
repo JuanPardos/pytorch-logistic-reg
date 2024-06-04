@@ -1,13 +1,12 @@
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import pandas as pd
 import numpy as np
 import torch
 import time
-
-#
 
 # Cargamos los datos
 data = pd.read_csv('heart_failure.csv')
@@ -67,7 +66,7 @@ n_samples, n_features = X.shape
 model = LogisticRegression(n_features).to(device)
 
 # Tasa de aprendizaje
-learning_rate = 0.5  #0.5
+learning_rate = 0.8  #0.5
 
 # Funciones de pérdida y optimizador
 criterion = nn.L1Loss()     #L1Loss
@@ -101,9 +100,10 @@ if __name__ == '__main__':
         
         # Imprimimos la pérdida cada 10 iteraciones
         if (epoch+1) % 10 == 0:
-            print(f'epoch: {epoch+1}, pérdida = {loss.item():.4f}')
+            print(f'Epoch: {epoch+1}, pérdida = {loss.item():.4f}')
 
-    print(f'\nTiempo de entrenamiento: {time.time()-t0:.2f} segundos')
+    print(f'\nDispositivo usado en el entrenamiento: ', device)
+    print(f'Tiempo de entrenamiento: {time.time()-t0:.2f} segundos')
     print('Epoch/s: {:.2f}'.format(num_epochs/(time.time()-t0)))
     
     # Representar pérdida
@@ -116,30 +116,43 @@ if __name__ == '__main__':
     with torch.no_grad():
         y_predicted = model(X_test)
 
-        # Estadísticas de la validación
+        # Estadísticas
         acc = torch.sum(y_predicted.round() == y_test)/len(y_test)
         misses = torch.sum(y_predicted.round() != y_test)
         doubtful = torch.sum((y_predicted >= 0.4) & (y_predicted <= 0.6)) # Consideramos dudosos aquellos valores entre 0.4 y 0.6
 
-        print('\n=== Estadísticas de la validación ===')
-        print(f'nº registros: {len(y_test)}')
-        print(f'precisión: {acc.item()*100:.2f}%')
-        print(f'errores: {misses.item()}')
-        print(f'dudosos: {doubtful.item()} ({doubtful.item()/len(y_test)*100:.2f}%)')  
-
-        # Matriz de confusión
         TP = torch.sum((y_predicted.round() == 1) & (y_test == 1))
         TN = torch.sum((y_predicted.round() == 0) & (y_test == 0))
         FP = torch.sum((y_predicted.round() == 1) & (y_test == 0))
         FN = torch.sum((y_predicted.round() == 0) & (y_test == 1))
+
+        TPR = TP/(TP+FN)
+        TNR = TN/(TN+FP)
+        FPR = FP/(FP+TN)
+        FNR = FN/(FN+TP)
+        y_test = y_test.cpu().numpy()
+        y_predicted = y_predicted.cpu().numpy()
+        roc_auc = roc_auc_score(y_test, y_predicted)
+
+        print('\n=== Estadísticas de la validación ===')
+        print(f'Nº registros: {len(y_test)}')
+        print(f'Precisión: {acc.item()*100:.2f}%')
+        print(f'Errores: {misses.item()}')
+        print(f'Dudosos: {doubtful.item()} ({doubtful.item()/len(y_test)*100:.2f}%)')  
+
+        print('\n=== Estadísticas ===')
+        print(f'TPR: {TPR.item():.2f}')
+        print(f'TNR: {TNR.item():.2f}')
+        print(f'FPR: {FPR.item():.2f}')
+        print(f'FNR: {FNR.item():.2f}')
+        print(f'ROC AUC: {roc_auc:.2f}')
 
         print('\n=== Matriz de confusión ===')
         print(f'{"":<10} {"Predicción"}')
         print(f'{"Real":<10} {"0":<10} {"1":<10}')
         print(f'{"0":<10} {TN.item():<10} {FP.item():<10}')
         print(f'{"1":<10} {FN.item():<10} {TP.item():<10}')
-
-
+        
     # Predecimos el conjunto original de datos
     with torch.no_grad():
         original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round()
