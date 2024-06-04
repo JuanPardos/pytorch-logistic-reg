@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
+import torch_directml
 import torch.nn as nn
 import pandas as pd
 import numpy as np
@@ -20,11 +21,7 @@ X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
 #Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=33)
 
-# Definimos el dispositivo donde se ejecutará el modelo. GPU si está disponible, de lo contrario, CPU.
-if torch.cuda.is_available():
-    device = torch.device('cuda:0')
-else:
-    device = torch.device('cpu')
+device = torch_directml.device()
 
 # Normalizar los datos. Todos los datos deben tener la misma escala.
 sc = StandardScaler()

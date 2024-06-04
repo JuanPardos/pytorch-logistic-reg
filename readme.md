@@ -1,10 +1,11 @@
 Introducción
 ==========================
 Regresión logística con pytorch sobre el dataset Heart Failure Clinical Records (2020).
+Con aceleración Direct-ML.
 
 Requisitos
 ==========================
-- Python 3.12.3 
+- Python 3.12.3
 
 Quick start
 ==========================
