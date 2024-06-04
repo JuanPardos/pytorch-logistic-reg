@@ -14,17 +14,17 @@ data = pd.read_csv('heart_failure.csv')
 # Copiamos los datos originales para la predicción final
 original_data = data.copy()
 
-# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
-X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
-
-#Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=33)
-
 # Definimos el dispositivo donde se ejecutará el modelo. GPU si está disponible, de lo contrario, CPU.
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
 else:
     device = torch.device('cpu')
+
+# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
+X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
+
+#Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=33)
 
 # Normalizar los datos. Todos los datos deben tener la misma escala.
 sc = StandardScaler()
@@ -62,18 +62,18 @@ class LogisticRegression(nn.Module):
 # Número de características de entrada
 n_samples, n_features = X.shape
 
-# Instanciar el modelo
-model = LogisticRegression(n_features).to(device)
-
 # Tasa de aprendizaje
 learning_rate = 0.8  #0.5
+
+# Epochs (iteraciones)
+num_epochs = 15000  #15000
+
+# Instanciar el modelo
+model = LogisticRegression(n_features).to(device)
 
 # Funciones de pérdida y optimizador
 criterion = nn.L1Loss()     #L1Loss
 optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate)   #Adagrad o RMSprop
-
-# Epochs (iteraciones)
-num_epochs = 15000  #15000
 
 # Almacenar la pérdida. Se usará en la representación gráfica.
 losses = []

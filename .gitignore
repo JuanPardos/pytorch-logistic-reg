@@ -1,5 +1,5 @@
-.venv
+.venv*
 __pycache__
-.ipynb_checkpoints/notebook-checkpoint.ipynb
+.ipynb_checkpoints
 pretrained_model.pth
-utils/.ipynb_checkpoints
+model.pth
