@@ -50,26 +50,35 @@ y_test = y_test.view(y_test.shape[0], 1)
 
 # Definir el modelo. Heredamos de la clase nn.Module.
 class LogisticRegression(nn.Module):
-    def __init__(self, n_input_features):
+    def __init__(self, n_input_features, n_hidden_layers):
         super(LogisticRegression, self).__init__()
-        self.linear = nn.Linear(n_input_features, 1) # Transformación lineal de los datos de entrada. 1 columna de salida.
+        self.hidden = nn.Linear(n_input_features, n_hidden_layers) 
+        self.output = nn.Linear(n_hidden_layers, 1)
 
-    # Forward pass. Se calcula la predicción usando la función sigmoide para obtener valores entre 0 y 1.
     def forward(self, x):
-        y_predicted = torch.sigmoid(self.linear(x))
+        x = torch.sigmoid(self.hidden(x))
+        y_predicted = torch.sigmoid(self.output(x)) #Función de activación sigmoide para obtener valores entre 0 y 1
         return y_predicted
+
+torch.manual_seed(33)
 
 # Número de características de entrada
 n_samples, n_features = X.shape
+
+# Número de neuronas en la capa oculta
+hidden_layers = 15  #15
+
+# Tamaño de lote
+batch_size = 10
 
 # Tasa de aprendizaje
 learning_rate = 0.8  #0.5
 
 # Epochs (iteraciones)
-num_epochs = 15000  #15000
+num_epochs = 10000  #15000
 
 # Instanciar el modelo
-model = LogisticRegression(n_features).to(device)
+model = LogisticRegression(n_features, hidden_layers).to(device)
 
 # Funciones de pérdida y optimizador
 criterion = nn.L1Loss()     #L1Loss
