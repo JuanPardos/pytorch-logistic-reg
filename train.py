@@ -172,9 +172,3 @@ if __name__ == '__main__':
         torch.save(model.state_dict(), 'model.pth')
         original_data.to_csv('heart_failure_predict.csv', index=False)
         print('Guardado correctamente.')
-
-    with torch.no_grad():
-        input = np.array([15, 0, 582, 0, 20, 1, 265000, 1.9, 130, 1, 1, 400])
-        tensor = torch.from_numpy(sc.transform(input.reshape(1, -1).astype(np.float32))).to(device)
-        y_predicted = model(tensor)
-        print(y_predicted.item())   
