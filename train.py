@@ -20,7 +20,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT.
+# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT. Values devuelve un array de numpy.
 X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
 
 #Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
@@ -43,10 +43,9 @@ X_test = X_test.to(device)
 y_train = y_train.to(device)
 y_test = y_test.to(device)
 
-# Redimensionar y_train y y_test. Solo predecimos una columna.
+# Redimensionar y_train y y_test. Pasar de (n,) a (n, 1)
 y_train = y_train.view(y_train.shape[0], 1)
 y_test = y_test.view(y_test.shape[0], 1)
-
 
 # Definir el modelo. Heredamos de la clase nn.Module.
 class LogisticRegression(nn.Module):
@@ -60,29 +59,27 @@ class LogisticRegression(nn.Module):
         y_predicted = torch.sigmoid(self.output(x)) #Función de activación sigmoide para obtener valores entre 0 y 1
         return y_predicted
 
-torch.manual_seed(33)
-
-# Número de características de entrada
+# Número de características de entrada. n_samples = número de registros, n_features = número de columnas.
 n_samples, n_features = X.shape
 
-# Número de neuronas en la capa oculta
-hidden_layers = 15  #15
+# Semilla de torch. Para garantizar reproducibilidad en las capas ocultas.
+torch.manual_seed(13)  #13
 
-# Tamaño de lote
-batch_size = 10
+# Número de neuronas en la capa oculta
+hidden_layers = 20  #20
 
 # Tasa de aprendizaje
-learning_rate = 0.8  #0.5
+learning_rate = 0.05  #0.05
 
 # Epochs (iteraciones)
-num_epochs = 10000  #15000
+num_epochs = 15000  #15000
 
 # Instanciar el modelo
 model = LogisticRegression(n_features, hidden_layers).to(device)
 
 # Funciones de pérdida y optimizador
-criterion = nn.L1Loss()     #L1Loss
-optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate)   #Adagrad o RMSprop
+criterion = nn.MSELoss()     #MSELoss
+optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate)   #Adagrad
 
 # Almacenar la pérdida. Se usará en la representación gráfica.
 losses = []
@@ -115,7 +112,7 @@ if __name__ == '__main__':
     print(f'Tiempo de entrenamiento: {time.time()-t0:.2f} segundos')
     print('Epoch/s: {:.2f}'.format(num_epochs/(time.time()-t0)))
     
-    # Representar pérdida
+    # Representar pérdida. Problemas en Windows.
     """ plt.plot(losses)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -139,11 +136,12 @@ if __name__ == '__main__':
         TNR = TN/(TN+FP)
         FPR = FP/(FP+TN)
         FNR = FN/(FN+TP)
+
         y_test = y_test.cpu().numpy()
         y_predicted = y_predicted.cpu().numpy()
         roc_auc = roc_auc_score(y_test, y_predicted)
 
-        print('\n=== Estadísticas de la validación ===')
+        print('\n=== Validación ===')
         print(f'Nº registros: {len(y_test)}')
         print(f'Precisión: {acc.item()*100:.2f}%')
         print(f'Errores: {misses.item()}')
@@ -162,14 +160,21 @@ if __name__ == '__main__':
         print(f'{"0":<10} {TN.item():<10} {FP.item():<10}')
         print(f'{"1":<10} {FN.item():<10} {TP.item():<10}')
         
-    # Predecimos el conjunto original de datos
+    # Predecimos el conjunto original de datos. Añadimos columnas de predicción y error.
     with torch.no_grad():
-        original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round()
-        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(['DEATH_EVENT', 'PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy()
-    
+        original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round().astype(int)
+        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(['DEATH_EVENT', 'PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round(4)
+        original_data['ERROR'] = np.abs(original_data['P1'] - original_data['DEATH_EVENT']).round(4)
+
     # Guardamos modelo y dataset con predicciones
     user_input = input('\n¿Desea guardar el modelo y dataset con las predicciones? (S/N): ')
     if user_input.lower() == 's':
         torch.save(model.state_dict(), 'model.pth')
         original_data.to_csv('heart_failure_predict.csv', index=False)
         print('Guardado correctamente.')
+
+    with torch.no_grad():
+        input = np.array([15, 0, 582, 0, 20, 1, 265000, 1.9, 130, 1, 1, 400])
+        tensor = torch.from_numpy(sc.transform(input.reshape(1, -1).astype(np.float32))).to(device)
+        y_predicted = model(tensor)
+        print(y_predicted.item())   

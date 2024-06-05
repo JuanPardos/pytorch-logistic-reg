@@ -19,11 +19,11 @@ sodio_mean = data['serum_sodium'].mean()
 tiempo_mean = data['time'].mean()
 
 # 12 variables independientes
-model = LogisticRegression(12)
+model = LogisticRegression(12,20)
 
 # Cargamos el modelo entrenado. Primero intentamos cargar el modelo preentrenado, si no existe, intentamos cargar el modelo menos exacto.
 try:
-    model.load_state_dict(torch.load('pretrained_model.pth'))
+    model.load_state_dict(torch.load('model.pth'))
 except FileNotFoundError:
     try:
         model.load_state_dict(torch.load('model.pth'))
@@ -43,6 +43,15 @@ print(
         Se usará la media o 0 en las binarias si no se especifica un valor"""
 )
 
+# Calculamos las medias
+edad_mean = data['age'].mean()
+creatinina_mean = data['creatinine_phosphokinase'].mean()
+ejection_mean = data['ejection_fraction'].mean()
+plaquetas_mean = data['platelets'].mean()
+serum_mean = data['serum_creatinine'].mean()
+sodio_mean = data['serum_sodium'].mean()
+tiempo_mean = data['time'].mean()
+
 # Pide al usuario que ingrese los valores de las variables independientes
 edad_i = input(f'Edad ({edad_mean} años): ')
 anemia_i = input('Anemia (0 o 1): ')
@@ -57,7 +66,7 @@ sexo_i = input('Sexo (0 mujer o 1 hombre): ')
 smoking_i = input('Fumador (0 o 1): ')
 tiempo_i = input(f'Tiempo ({tiempo_mean} dias): ')
 
-# Asigna los valores ingresados por el usuario o la media si no se especifica un valor
+# Asignamos la media si no se introduce nada
 edad_v = edad_mean if edad_i == '' else float(edad_i)
 anemia_v = 0 if anemia_i == '' else int(anemia_i)
 creatinina_v = creatinina_mean if creatinina_i == '' else float(creatinina_i)
@@ -74,18 +83,17 @@ tiempo_v = tiempo_mean if tiempo_i == '' else float(tiempo_i)
 # Prepara los datos de entrada
 X_new = np.array([edad_v, anemia_v, creatinina_v, diabetes_v, ejection_v, hipertension_v, plaquetas_v, serum_v, sodio_v, sexo_v, smoking_v, tiempo_v])
 
-# Normaliza los datos
-sc = StandardScaler()
-X_new = sc.fit_transform(X_new.reshape(1, -1))
+# Asume que X_new es tu única muestra de datos
+X_new = X_new.reshape(1, -1)  # Remodela a 2D
 
-# Convierte los datos de entrada a un tensor de PyTorch
-X_new = torch.from_numpy(X_new.astype(np.float32))
+sc = StandardScaler()
+sc.fit(X_new)
 
 # Realiza la predicción
 with torch.no_grad():
-    y_pred = model(X_new)
+    tensor = torch.from_numpy(sc.transform(X_new.astype(np.float32))).to(device)
+    print(tensor)
+    y_pred = model(tensor)
     print('Probabilidad de fallecimiento: {:.2%}'.format(y_pred.item()))
-
-
 
 
