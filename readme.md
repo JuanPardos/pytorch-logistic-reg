@@ -8,14 +8,16 @@ Requisitos
 
 Quick start
 ==========================
-Se recomienda un entorno virtual de python
-- pip install -r requirements.txt
-- Ejecutar cualquiera de los archivos:
-    - data.py:    Información sobre el dataset.
-    - train.py:   Entrenamiento y exportación del modelo.
-    - predict.py: Predicciones.
-
-- (Opcional) Ejecutar el jupyter notebook.
+- $ git clone https://github.com/JuanPardos/pytorch-logistic-reg
+- $ cd pytorch-logistic-reg
+- $ python -m venv .venv
+- Linux:
+    - $ source .venv/bin/activate
+- Windows (cmd):
+    - $ .venv\Scripts\activate.bat
+- $ pip install -r requirements.txt
+- $ jupyter lab
+- Ejecutar el notebook. Opcional train.py
 
 Referencias
 ==========================

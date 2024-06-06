@@ -20,7 +20,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-# Definimos las variables que NO vamos a usar para predecir.
+# Variables que NO vamos a usar para predecir.
 var_ignore = ['DEATH_EVENT']  # 'time' 
 
 # Variables independientes(X) y dependendientes(y). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT. Values devuelve un array de numpy.
@@ -82,7 +82,7 @@ model = LogisticRegression(n_features, hidden_layers).to(device)
 
 # Funciones de pérdida y optimizador
 criterion = nn.MSELoss()     #MSELoss
-optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate)   #Adagrad
+optimizer = torch.optim.Adagrad(model.parameters(), lr=learning_rate, weight_decay=5e-6)   #Adagrad
 
 # Almacenar la pérdida. Se usará en la representación gráfica.
 losses = []
