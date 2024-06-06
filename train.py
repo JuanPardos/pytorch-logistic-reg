@@ -145,7 +145,7 @@ if __name__ == '__main__':
         print(f'Nº registros: {len(y_test)}')
         print(f'Precisión: {acc.item()*100:.2f}%')
         print(f'Errores: {misses.item()}')
-        print(f'Dudosos: {doubtful.item()} ({doubtful.item()/len(y_test)*100:.2f}%)')  
+        print(f'Indecisos: {doubtful.item()} ({doubtful.item()/len(y_test)*100:.2f}%)')  
 
         print('\n=== Estadísticas ===')
         print(f'TPR: {TPR.item():.2f}')
