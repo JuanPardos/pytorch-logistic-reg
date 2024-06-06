@@ -20,8 +20,11 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-# Variables dependiente(y) e independientes(X). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT. Values devuelve un array de numpy.
-X, y = data.drop('DEATH_EVENT', axis=1).values, data['DEATH_EVENT'].values
+# Definimos las variables que NO vamos a usar para predecir.
+var_ignore = ['DEATH_EVENT']  # 'time' 
+
+# Variables independientes(X) y dependendientes(y). Nuestro objetivo es predecir la variable dependiente DEATH_EVENT. Values devuelve un array de numpy.
+X, y = data.drop(var_ignore, axis=1).values, data['DEATH_EVENT'].values
 
 #Dividir los datos en entrenamiento y test. 66% para entrenamiento y 33% para test. Semilla para garantizar reproducibilidad.
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.66, random_state=33)
@@ -162,8 +165,8 @@ if __name__ == '__main__':
         
     # Predecimos el conjunto original de datos. Añadimos columnas de predicción y error.
     with torch.no_grad():
-        original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop('DEATH_EVENT', axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round().astype(int)
-        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(['DEATH_EVENT', 'PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round(4)
+        original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore, axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round().astype(int)
+        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore + ['PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round(4)
         original_data['ERROR'] = np.abs(original_data['P1'] - original_data['DEATH_EVENT']).round(4)
 
     # Guardamos modelo y dataset con predicciones
