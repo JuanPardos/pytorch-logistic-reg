@@ -33,7 +33,7 @@ Quick start
     (incluye documentación, entrenamiento y predicción)
 
 #### Google Colab (recomendado):
-Subir el notebook, ejecutar y listo 🤯
+Subir el notebook, el archivo data.py, ejecutar y listo 🤯
         
 
 Notas
