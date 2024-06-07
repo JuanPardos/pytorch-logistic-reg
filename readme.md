@@ -9,8 +9,6 @@ Requisitos
 
 Quick start
 ==========================
-    **Se recomienda usar un entorno virtual de Python**
-
     $ git clone https://github.com/JuanPardos/pytorch-logistic-reg
     $ cd pytorch-logistic-reg
     $ python -m venv .venv
@@ -19,23 +17,34 @@ Quick start
     Windows (cmd):
         $ .venv\Scripts\activate.bat
     $ pip install -r requirements.txt
-    $ python train.py 
+    $ python main.py 
 
     (solo entrenamiento)
 
-#### Notebook (Recomendado):
+#### Notebook:
+    Comandos anteriores +
+
     VsCode:
         $ pip install ipykernel
     Jupyter Lab:
         $ pip install jupyterlab
         $ jupyter lab
-    Ejecutar notebook.ipynb
+    
+    (incluye documentación, entrenamiento y predicción)
+
+#### Google Colab (recomendado):
+Subir el notebook, ejecutar y listo 🤯
+        
 
 Notas
 ==========================
-- El notebook se puede usar en Google Colab o similares sin necesidad de instalar nada en local. <br>
-- Para aceleración por hardware en AMD (Linux) instalar torch con el siguiente comando: <br>
-    $ pip install torch --index-url https://download.pytorch.org/whl/rocm6.0
+Para aceleración por hardware en AMD (Linux) instalar torch con el siguiente comando: <br>
+$ pip install torch --index-url https://download.pytorch.org/whl/rocm6.0
+
+
+TODO
+==========================
+Script python separado para predecir
 
 Referencias
 ==========================
