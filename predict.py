@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import torch
 
-#FIXME
+#FIXME: No funciona. Falta añadir los cambios del notebook para usar datos aleatorios etc.
 
 # Cargamos datos para calcular las medias
 data = pd.read_csv('heart_failure.csv')

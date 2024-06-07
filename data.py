@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-import numpy as np
 
 # Referencia
 print('Heart Failure Clinical Records (2020) - https://archive.ics.uci.edu/dataset/519/heart+failure+clinical+records')

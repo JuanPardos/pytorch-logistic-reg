@@ -62,7 +62,7 @@ class LogisticRegression(nn.Module):
         y_predicted = torch.sigmoid(self.output(x)) #Función de activación sigmoide para obtener valores entre 0 y 1
         return y_predicted
 
-# Número de características de entrada. n_samples = número de registros, n_features = número de columnas.
+# Número de características. n_samples = número de registros, n_features = número de columnas.
 n_samples, n_features = X.shape
 
 # Semilla de torch. Para garantizar reproducibilidad en las capas ocultas.
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         # Backward pass. Se calcula el gradiente de la función de pérdida con respecto a los parámetros del modelo.
         loss.backward()
         
-        # Update. Actualizamos los parámetros del modelo con la nueva información
+        # Update. Actualizamos los pesos y otros parámetros del modelo con la nueva información
         optimizer.step()
         
         # Limpiamos los gradientes
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     print(f'Tiempo de entrenamiento: {time.time()-t0:.2f} segundos')
     print('Epoch/s: {:.2f}'.format(num_epochs/(time.time()-t0)))
     
-    # Representar pérdida. Problemas en Windows.
+    # Representar pérdida a lo largo del tiempo. Da problemas en windows.
     """ plt.plot(losses)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -165,8 +165,9 @@ if __name__ == '__main__':
         
     # Predecimos el conjunto original de datos. Añadimos columnas de predicción y error.
     with torch.no_grad():
-        original_data['PREDICT'] = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore, axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round().astype(int)
-        original_data['P1'] = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore + ['PREDICT'], axis=1).values).astype(np.float32)).to(device)).cpu().numpy().round(4)
+        predicciones = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore, axis=1).values).astype(np.float32)).to(device)).numpy()
+        original_data['PREDICT'] = predicciones.round().astype(int) # Redondeamos a 0 o 1
+        original_data['P1'] = predicciones.round(4) # Probabilidad con 4 decimales
         original_data['ERROR'] = np.abs(original_data['P1'] - original_data['DEATH_EVENT']).round(4)
 
     # Guardamos modelo y dataset con predicciones
