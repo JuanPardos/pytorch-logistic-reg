@@ -174,7 +174,7 @@ if __name__ == '__main__':
         
     # Predecimos el conjunto original de datos. Añadimos columnas de predicción y error.
     with torch.no_grad():
-        predicciones = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore, axis=1).values).astype(np.float32)).to(device)).numpy()
+        predicciones = model(torch.from_numpy(sc.transform(original_data.drop(var_ignore, axis=1).values).astype(np.float32)).to(device)).cpu().numpy()
         original_data['PREDICT'] = predicciones.round().astype(int) # Redondeamos a 0 o 1
         original_data['P1'] = predicciones.round(4) # Probabilidad con 4 decimales
         original_data['ERROR'] = np.abs(original_data['P1'] - original_data['DEATH_EVENT']).round(4)

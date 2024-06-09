@@ -5,9 +5,10 @@ Regresión logística con pytorch sobre el dataset Heart Failure Clinical Record
 Requisitos
 ==========================
 - Python 3.12.3 
+- Pytorch
 - Git
 
-Quick start
+Instalación y dependencias
 ==========================
     $ git clone https://github.com/JuanPardos/pytorch-logistic-reg
     $ cd pytorch-logistic-reg
@@ -17,7 +18,11 @@ Quick start
     Windows (cmd):
         $ .venv\Scripts\activate.bat
     $ pip install -r requirements.txt
-    $ python main.py 
+    Pytorch:
+        Nvidia: $ pip install torch
+        AMD(Linux): $ pip install torch --index-url https://download.pytorch.org/whl/rocm6.0
+        CPU: $ pip install torch --index-url https://download.pytorch.org/whl/cpu
+    $ python main.py
 
     (solo entrenamiento)
 
@@ -30,22 +35,11 @@ Quick start
         $ pip install jupyterlab
         $ jupyter lab
     
-    (incluye documentación, entrenamiento y predicción)
+    (documentación, entrenamiento y predicción)
 
 #### Google Colab (recomendado):
 Subir el notebook, el archivo data.py, ejecutar y listo 🤯
-        
-
-Notas
-==========================
-Para aceleración por hardware en AMD (Linux) instalar torch con el siguiente comando: <br>
-$ pip install torch --index-url https://download.pytorch.org/whl/rocm6.0
-
-
-TODO
-==========================
-Script python separado para predecir
 
 Referencias
 ==========================
-https://archive.ics.uci.edu/dataset/519/heart+failure+clinical+records
+https://www.kaggle.com/datasets/aadarshvelu/heart-failure-prediction-clinical-records
